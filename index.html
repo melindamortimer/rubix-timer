@@ -71,17 +71,17 @@
       text-align: center;
     }
 
-    #scramble-bar button {
+    .btn-ghost {
       background: none;
       border: 1px solid #444;
       color: #888;
       padding: 2px 8px;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
 
-    #scramble-bar button:hover { color: #fff; border-color: #666; }
+    .btn-ghost:hover { color: #fff; border-color: #666; }
 
     #session-bar {
       display: flex;
@@ -109,17 +109,11 @@
       cursor: pointer;
     }
 
-    #session-bar button {
-      background: none;
-      border: 1px solid #444;
-      color: #888;
-      padding: 2px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.85rem;
+    .btn-ghost-sm {
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      border-color: #555;
     }
-
-    #session-bar button:hover { color: #fff; border-color: #666; }
 
     #session-today {
       color: #666;
@@ -198,28 +192,6 @@
       gap: 6px;
     }
 
-    #export-btn, #import-btn {
-      background: none;
-      border: 1px solid #555;
-      color: #888;
-      padding: 4px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.75rem;
-    }
-
-    #export-btn:hover, #import-btn:hover { color: #fff; border-color: #666; }
-
-    #clear-all-btn {
-      background: none;
-      border: 1px solid #555;
-      color: #888;
-      padding: 4px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.75rem;
-    }
-
     #clear-all-btn:hover { color: #ff5252; border-color: #ff5252; }
 
     #history-list {
@@ -296,15 +268,15 @@
     </div>
     <div id="scramble-bar">
       <div id="scramble-text"></div>
-      <button onclick="showNewScramble()" title="New scramble">&#x21BB;</button>
+      <button class="btn-ghost" onclick="showNewScramble()" title="New scramble">&#x21BB;</button>
     </div>
 
     <div id="session-bar">
       <div id="session-controls">
         <select id="session-select"></select>
-        <button id="session-add" title="New session">+</button>
-        <button id="session-rename" title="Rename session">&#x270E;</button>
-        <button id="session-delete" title="Delete session">&#x2715;</button>
+        <button class="btn-ghost" id="session-add" title="New session">+</button>
+        <button class="btn-ghost" id="session-rename" title="Rename session">&#x270E;</button>
+        <button class="btn-ghost" id="session-delete" title="Delete session">&#x2715;</button>
       </div>
       <span id="session-today"></span>
     </div>
@@ -328,9 +300,9 @@
       <div id="history-header">
         <span>Solves</span>
         <div id="history-actions">
-          <button id="export-btn" title="Export CSV">Export</button>
-          <button id="import-btn" title="Import CSV">Import</button>
-          <button id="clear-all-btn" title="Clear all">Clear All</button>
+          <button class="btn-ghost btn-ghost-sm" id="export-btn" title="Export CSV">Export</button>
+          <button class="btn-ghost btn-ghost-sm" id="import-btn" title="Import CSV">Import</button>
+          <button class="btn-ghost btn-ghost-sm" id="clear-all-btn" title="Clear all">Clear All</button>
         </div>
       </div>
       <input type="file" id="import-file" accept=".csv" style="display: none;">
@@ -339,137 +311,26 @@
   </div>
 
   <script>
-    // === Task 2: Scramble Generator ===
+    // === DOM References ===
 
-    function generateScramble() {
-      const faces = ['R', 'L', 'U', 'D', 'F', 'B'];
-      const modifiers = ['', "'", '2'];
-      const axes = { R: 0, L: 0, U: 1, D: 1, F: 2, B: 2 };
-      const moves = [];
-      let lastFace = '', lastAxis = -1;
+    const dom = {
+      scrambleText: document.getElementById('scramble-text'),
+      timerDisplay: document.getElementById('timer-display'),
+      vsBest: document.getElementById('vs-best'),
+      hint: document.getElementById('hint'),
+      statBest: document.getElementById('stat-best'),
+      statAo3: document.getElementById('stat-ao3'),
+      statAo5: document.getElementById('stat-ao5'),
+      statAo12: document.getElementById('stat-ao12'),
+      historyList: document.getElementById('history-list'),
+      sessionSelect: document.getElementById('session-select'),
+      sessionToday: document.getElementById('session-today'),
+      chartCanvas: document.getElementById('speed-chart'),
+      chartContainer: document.getElementById('speed-chart-container'),
+      importFile: document.getElementById('import-file'),
+    };
 
-      for (let i = 0; i < 20; i++) {
-        let face;
-        do {
-          face = faces[Math.floor(Math.random() * faces.length)];
-        } while (face === lastFace || (axes[face] === lastAxis && moves.length > 0));
-
-        const mod = modifiers[Math.floor(Math.random() * modifiers.length)];
-        moves.push(face + mod);
-        lastAxis = axes[face];
-        lastFace = face;
-      }
-      return moves.join(' ');
-    }
-
-    const scrambleText = document.getElementById('scramble-text');
-
-    function showNewScramble() {
-      const moves = generateScramble().split(' ');
-      scrambleText.innerHTML = moves.map(m => `<span class="scramble-move">${m}</span>`).join('');
-    }
-
-    showNewScramble();
-
-    // === Task 3: Timer State Machine ===
-
-    let timerState = 'idle';
-    let holdTimeout = null;
-    let startTime = 0;
-    let elapsed = 0;
-    let animationFrame = null;
-    let currentScramble = '';
-
-    const timerDisplay = document.getElementById('timer-display');
-
-    document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        if (e.repeat) return;
-
-        if (timerState === 'running') {
-          stopTimer();
-        } else if (timerState === 'idle' || timerState === 'stopped') {
-          startHolding();
-        }
-      }
-    });
-
-    document.addEventListener('keyup', (e) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        if (timerState === 'holding') {
-          cancelHolding();
-        } else if (timerState === 'ready') {
-          startTimer();
-        }
-      }
-    });
-
-    // === Task 4: Mobile Touch Support ===
-
-    timerDisplay.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      if (timerState === 'running') {
-        stopTimer();
-      } else if (timerState === 'idle' || timerState === 'stopped') {
-        startHolding();
-      }
-    });
-
-    timerDisplay.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      if (timerState === 'holding') {
-        cancelHolding();
-      } else if (timerState === 'ready') {
-        startTimer();
-      }
-    });
-
-    function startHolding() {
-      timerDisplay.textContent = '0.00';
-      timerState = 'holding';
-      timerDisplay.style.color = '#ffd700';
-      holdTimeout = setTimeout(() => {
-        timerState = 'ready';
-        timerDisplay.style.color = '#00e676';
-      }, 300);
-    }
-
-    function cancelHolding() {
-      clearTimeout(holdTimeout);
-      timerState = 'idle';
-      timerDisplay.style.color = '#ffffff';
-    }
-
-    function startTimer() {
-      timerState = 'running';
-      timerDisplay.style.color = '#ffffff';
-      currentScramble = [...scrambleText.querySelectorAll('.scramble-move')].map(el => el.textContent).join(' ');
-      startTime = performance.now();
-      updateDisplay();
-    }
-
-    function stopTimer() {
-      timerState = 'stopped';
-      elapsed = Math.round(performance.now() - startTime);
-      cancelAnimationFrame(animationFrame);
-      timerDisplay.textContent = formatTime(elapsed);
-      timerDisplay.style.color = '#ffffff';
-      showNewScramble();
-      addSolve(elapsed, currentScramble);
-      renderStats();
-      renderSessionBar();
-      const hint = document.getElementById('hint');
-      if (hint) hint.style.display = 'none';
-    }
-
-    function updateDisplay() {
-      if (timerState !== 'running') return;
-      elapsed = performance.now() - startTime;
-      timerDisplay.textContent = formatTime(elapsed);
-      animationFrame = requestAnimationFrame(updateDisplay);
-    }
+    // === Formatting Helpers ===
 
     function formatTime(ms) {
       const totalSeconds = ms / 1000;
@@ -481,19 +342,93 @@
       return minutes + ':' + seconds;
     }
 
-    // === Task 5: localStorage Persistence ===
+    function formatOrDash(value) {
+      return value !== null ? formatTime(value) : '\u2014';
+    }
 
-    function loadSolves() {
+    function formatDateHeader(dateStr) {
+      const date = new Date(dateStr);
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const dStr = date.toISOString().slice(0, 10);
+      const tStr = today.toISOString().slice(0, 10);
+      const yStr = yesterday.toISOString().slice(0, 10);
+
+      if (dStr === tStr) return 'Today';
+      if (dStr === yStr) return 'Yesterday';
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function formatDelta(solveTime, reference) {
+      if (reference === null) return null;
+      const diff = solveTime - reference;
+      return { text: (diff >= 0 ? '+' : '') + (diff / 1000).toFixed(2), diff };
+    }
+
+    // === Scramble Generator ===
+
+    const FACES = ['R', 'L', 'U', 'D', 'F', 'B'];
+    const MODIFIERS = ['', "'", '2'];
+    const FACE_AXES = { R: 0, L: 0, U: 1, D: 1, F: 2, B: 2 };
+
+    function generateScramble() {
+      const moves = [];
+      let lastFace = '';
+      let lastAxis = -1;
+
+      for (let i = 0; i < 20; i++) {
+        let face;
+        do {
+          face = FACES[Math.floor(Math.random() * FACES.length)];
+        } while (face === lastFace || (FACE_AXES[face] === lastAxis && moves.length > 0));
+
+        const mod = MODIFIERS[Math.floor(Math.random() * MODIFIERS.length)];
+        moves.push(face + mod);
+        lastAxis = FACE_AXES[face];
+        lastFace = face;
+      }
+      return moves;
+    }
+
+    function showNewScramble() {
+      const moves = generateScramble();
+      dom.scrambleText.innerHTML = moves
+        .map(m => `<span class="scramble-move">${m}</span>`)
+        .join('');
+    }
+
+    function getCurrentScrambleText() {
+      return [...dom.scrambleText.querySelectorAll('.scramble-move')]
+        .map(el => el.textContent)
+        .join(' ');
+    }
+
+    // === localStorage Persistence ===
+
+    const STORAGE_KEYS = {
+      solves: 'rubix-timer-solves',
+      sessions: 'rubix-timer-sessions',
+    };
+
+    const DEFAULT_SESSION_META = { sessions: ['Default'], activeSession: 'Default' };
+
+    function loadJSON(key, fallback) {
       try {
-        const data = localStorage.getItem('rubix-timer-solves');
-        return data ? JSON.parse(data) : [];
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : fallback;
       } catch {
-        return [];
+        return fallback;
       }
     }
 
+    function loadSolves() {
+      return loadJSON(STORAGE_KEYS.solves, []);
+    }
+
     function saveSolves(solves) {
-      localStorage.setItem('rubix-timer-solves', JSON.stringify(solves));
+      localStorage.setItem(STORAGE_KEYS.solves, JSON.stringify(solves));
     }
 
     function addSolve(time, scramble) {
@@ -501,7 +436,7 @@
       solves.unshift({
         id: crypto.randomUUID(),
         time: Math.round(time),
-        scramble: scramble,
+        scramble,
         date: new Date().toISOString(),
         session: getActiveSession()
       });
@@ -515,24 +450,14 @@
       return solves;
     }
 
-    function clearAllSolves() {
-      saveSolves([]);
-      return [];
-    }
-
-    // === Sessions ===
+    // === Session Management ===
 
     function loadSessionMeta() {
-      try {
-        const data = localStorage.getItem('rubix-timer-sessions');
-        return data ? JSON.parse(data) : { sessions: ['Default'], activeSession: 'Default' };
-      } catch {
-        return { sessions: ['Default'], activeSession: 'Default' };
-      }
+      return loadJSON(STORAGE_KEYS.sessions, { ...DEFAULT_SESSION_META });
     }
 
     function saveSessionMeta(meta) {
-      localStorage.setItem('rubix-timer-sessions', JSON.stringify(meta));
+      localStorage.setItem(STORAGE_KEYS.sessions, JSON.stringify(meta));
     }
 
     function getActiveSession() {
@@ -587,11 +512,10 @@
         solves.forEach(s => { s.session = 'Default'; });
         saveSolves(solves);
       }
-      const meta = loadSessionMeta();
-      saveSessionMeta(meta);
+      saveSessionMeta(loadSessionMeta());
     }
 
-    // === Task 6: Statistics Calculations ===
+    // === Statistics ===
 
     function calcBest(solves) {
       if (solves.length === 0) return null;
@@ -604,97 +528,102 @@
       if (count <= 3) {
         return recent.reduce((a, b) => a + b, 0) / count;
       }
-      // Trimmed mean: drop best and worst
       recent.sort((a, b) => a - b);
       const trimmed = recent.slice(1, -1);
       return trimmed.reduce((a, b) => a + b, 0) / trimmed.length;
     }
 
-    // === Task 7: Stats + History UI Rendering ===
-
-    function formatDateHeader(dateStr) {
-      const date = new Date(dateStr);
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      const dStr = date.toISOString().slice(0, 10);
-      const tStr = today.toISOString().slice(0, 10);
-      const yStr = yesterday.toISOString().slice(0, 10);
-
-      if (dStr === tStr) return 'Today';
-      if (dStr === yStr) return 'Yesterday';
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    function getVsBestColor(diffMs) {
+      if (diffMs <= 0) return '#00e676';
+      if (diffMs <= 500) return '#00e676';
+      if (diffMs >= 3000) return '#ff5252';
+      return '#888';
     }
 
-    function formatDelta(solveTime, reference) {
-      if (reference === null) return null;
-      const diff = solveTime - reference;
-      return { text: (diff >= 0 ? '+' : '') + (diff / 1000).toFixed(2), diff };
+    // === UI Helpers ===
+
+    function updateHintVisibility() {
+      if (dom.hint) {
+        dom.hint.style.display = getSessionSolves().length > 0 ? 'none' : '';
+      }
     }
 
-    function renderStats() {
-      const solves = getSessionSolves();
+    function createDeltaElement(solveTime, reference) {
+      const el = document.createElement('span');
+      el.className = 'history-delta';
+      const delta = formatDelta(solveTime, reference);
+      if (delta) {
+        el.textContent = delta.text;
+        el.classList.add(delta.diff <= 0 ? 'delta-negative' : 'delta-positive');
+      } else {
+        el.textContent = '\u2014';
+        el.classList.add('delta-neutral');
+      }
+      return el;
+    }
 
+    // === Stats Rendering (broken into focused functions) ===
+
+    function updateStatValues(solves) {
       const best = calcBest(solves);
       const ao3 = calcAvg(solves, 3);
       const ao5 = calcAvg(solves, 5);
       const ao12 = calcAvg(solves, 12);
-      document.getElementById('stat-best').textContent = best !== null ? formatTime(best) : '—';
-      document.getElementById('stat-ao3').textContent = ao3 !== null ? formatTime(ao3) : '—';
-      document.getElementById('stat-ao5').textContent = ao5 !== null ? formatTime(ao5) : '—';
-      document.getElementById('stat-ao12').textContent = ao12 !== null ? formatTime(ao12) : '—';
 
-      // vs Best under timer (compare against previous best, i.e. best before current solve)
-      const vsBestEl = document.getElementById('vs-best');
-      if (solves.length > 1) {
-        const lastSolve = solves[0];
-        const previousBest = calcBest(solves.slice(1));
-        const delta = formatDelta(lastSolve.time, previousBest);
-        if (delta) {
-          vsBestEl.textContent = 'vs best: ' + delta.text;
-          if (delta.diff < 0) { vsBestEl.style.color = '#00e676'; }
-          else if (delta.diff === 0) { vsBestEl.style.color = '#ffd700'; }
-          else if (delta.diff <= 500) { vsBestEl.style.color = '#00e676'; }
-          else if (delta.diff >= 3000) { vsBestEl.style.color = '#ff5252'; }
-          else { vsBestEl.style.color = '#888'; }
-        } else {
-          vsBestEl.textContent = '';
-        }
-      } else {
-        vsBestEl.textContent = '';
+      dom.statBest.textContent = formatOrDash(best);
+      dom.statAo3.textContent = formatOrDash(ao3);
+      dom.statAo5.textContent = formatOrDash(ao5);
+      dom.statAo12.textContent = formatOrDash(ao12);
+
+      return { best, ao3, ao5, ao12 };
+    }
+
+    function updateVsBest(solves) {
+      if (solves.length <= 1) {
+        dom.vsBest.textContent = '';
+        return;
       }
 
-      renderSpeedChart(solves);
+      const previousBest = calcBest(solves.slice(1));
+      const delta = formatDelta(solves[0].time, previousBest);
 
-      const historyList = document.getElementById('history-list');
-      historyList.innerHTML = '';
-
-      if (solves.length > 0) {
-        const header = document.createElement('div');
-        header.className = 'history-header-row';
-
-        const cols = [
-          { text: '#', width: '40px' },
-          { text: 'Time', width: '80px' },
-          { text: 'vs Ao3', width: '70px', align: 'right' },
-          { text: 'vs Ao5', width: '70px', align: 'right' },
-          { text: 'Scramble', flex: true, marginLeft: '12px' },
-          { text: '', width: '32px' }
-        ];
-
-        cols.forEach(col => {
-          const span = document.createElement('span');
-          span.textContent = col.text;
-          if (col.width) span.style.width = col.width;
-          if (col.flex) span.style.flex = '1';
-          if (col.align) span.style.textAlign = col.align;
-          if (col.marginLeft) span.style.marginLeft = col.marginLeft;
-          header.appendChild(span);
-        });
-
-        historyList.appendChild(header);
+      if (!delta) {
+        dom.vsBest.textContent = '';
+        return;
       }
+
+      dom.vsBest.textContent = 'vs best: ' + delta.text;
+      dom.vsBest.style.color = delta.diff === 0 ? '#ffd700' : getVsBestColor(delta.diff);
+    }
+
+    function renderHistoryList(solves, ao3, ao5) {
+      dom.historyList.innerHTML = '';
+
+      if (solves.length === 0) return;
+
+      const header = document.createElement('div');
+      header.className = 'history-header-row';
+
+      const cols = [
+        { text: '#', width: '40px' },
+        { text: 'Time', width: '80px' },
+        { text: 'vs Ao3', width: '70px', align: 'right' },
+        { text: 'vs Ao5', width: '70px', align: 'right' },
+        { text: 'Scramble', flex: true, marginLeft: '12px' },
+        { text: '', width: '32px' }
+      ];
+
+      cols.forEach(col => {
+        const span = document.createElement('span');
+        span.textContent = col.text;
+        if (col.width) span.style.width = col.width;
+        if (col.flex) span.style.flex = '1';
+        if (col.align) span.style.textAlign = col.align;
+        if (col.marginLeft) span.style.marginLeft = col.marginLeft;
+        header.appendChild(span);
+      });
+
+      dom.historyList.appendChild(header);
 
       let lastDateGroup = '';
 
@@ -705,7 +634,7 @@
           const dateHeader = document.createElement('div');
           dateHeader.className = 'history-date-header';
           dateHeader.textContent = formatDateHeader(solve.date);
-          historyList.appendChild(dateHeader);
+          dom.historyList.appendChild(dateHeader);
         }
 
         const row = document.createElement('div');
@@ -730,31 +659,24 @@
         del.dataset.id = solve.id;
         del.textContent = '\u2715';
 
-        const deltaAo3 = document.createElement('span');
-        deltaAo3.className = 'history-delta';
-        const ao3Delta = formatDelta(solve.time, ao3);
-        if (ao3Delta) {
-          deltaAo3.textContent = ao3Delta.text;
-          deltaAo3.classList.add(ao3Delta.diff <= 0 ? 'delta-negative' : 'delta-positive');
-        } else {
-          deltaAo3.textContent = '—';
-          deltaAo3.classList.add('delta-neutral');
-        }
-
-        const deltaAo5 = document.createElement('span');
-        deltaAo5.className = 'history-delta';
-        const ao5Delta = formatDelta(solve.time, ao5);
-        if (ao5Delta) {
-          deltaAo5.textContent = ao5Delta.text;
-          deltaAo5.classList.add(ao5Delta.diff <= 0 ? 'delta-negative' : 'delta-positive');
-        } else {
-          deltaAo5.textContent = '—';
-          deltaAo5.classList.add('delta-neutral');
-        }
-
-        row.append(num, time, deltaAo3, deltaAo5, scramble, del);
-        historyList.appendChild(row);
+        row.append(
+          num,
+          time,
+          createDeltaElement(solve.time, ao3),
+          createDeltaElement(solve.time, ao5),
+          scramble,
+          del
+        );
+        dom.historyList.appendChild(row);
       });
+    }
+
+    function renderStats() {
+      const solves = getSessionSolves();
+      const { ao3, ao5 } = updateStatValues(solves);
+      updateVsBest(solves);
+      renderSpeedChart(solves);
+      renderHistoryList(solves, ao3, ao5);
     }
 
     // === Speed Chart ===
@@ -762,18 +684,14 @@
     let speedChart = null;
 
     function renderSpeedChart(solves) {
-      const ctx = document.getElementById('speed-chart');
-      const container = document.getElementById('speed-chart-container');
-
       if (solves.length < 2) {
-        container.style.display = 'none';
+        dom.chartContainer.style.display = 'none';
         if (speedChart) { speedChart.destroy(); speedChart = null; }
         return;
       }
 
-      container.style.display = '';
+      dom.chartContainer.style.display = '';
 
-      // Reverse so oldest is first (left to right)
       const ordered = [...solves].reverse();
       const labels = ordered.map((_, i) => i + 1);
       const data = ordered.map(s => s.time / 1000);
@@ -785,7 +703,7 @@
         return;
       }
 
-      speedChart = new Chart(ctx, {
+      speedChart = new Chart(dom.chartCanvas, {
         type: 'line',
         data: {
           labels,
@@ -808,7 +726,7 @@
             legend: { display: false },
             tooltip: {
               callbacks: {
-                label: (ctx) => formatTime(ctx.parsed.y * 1000)
+                label: (tip) => formatTime(tip.parsed.y * 1000)
               }
             }
           },
@@ -830,23 +748,136 @@
               grid: { color: '#222' }
             }
           },
-          interaction: {
-            intersect: false,
-            mode: 'index'
-          }
+          interaction: { intersect: false, mode: 'index' }
         }
       });
     }
 
-    document.getElementById('history-list').addEventListener('click', (e) => {
-      const btn = e.target.closest('.history-delete');
-      if (btn) {
-        deleteSolve(btn.dataset.id);
-        renderStats();
+    // === Timer State Machine ===
+
+    let timerState = 'idle';
+    let holdTimeout = null;
+    let startTime = 0;
+    let elapsed = 0;
+    let animationFrame = null;
+    let currentScramble = '';
+
+    function handleInputDown() {
+      if (timerState === 'running') {
+        stopTimer();
+      } else if (timerState === 'idle' || timerState === 'stopped') {
+        startHolding();
       }
+    }
+
+    function handleInputUp() {
+      if (timerState === 'holding') {
+        cancelHolding();
+      } else if (timerState === 'ready') {
+        startTimer();
+      }
+    }
+
+    function startHolding() {
+      dom.timerDisplay.textContent = '0.00';
+      timerState = 'holding';
+      dom.timerDisplay.style.color = '#ffd700';
+      holdTimeout = setTimeout(() => {
+        timerState = 'ready';
+        dom.timerDisplay.style.color = '#00e676';
+      }, 300);
+    }
+
+    function cancelHolding() {
+      clearTimeout(holdTimeout);
+      timerState = 'idle';
+      dom.timerDisplay.style.color = '#ffffff';
+    }
+
+    function startTimer() {
+      timerState = 'running';
+      dom.timerDisplay.style.color = '#ffffff';
+      currentScramble = getCurrentScrambleText();
+      startTime = performance.now();
+      updateDisplay();
+    }
+
+    function stopTimer() {
+      timerState = 'stopped';
+      elapsed = Math.round(performance.now() - startTime);
+      cancelAnimationFrame(animationFrame);
+      dom.timerDisplay.textContent = formatTime(elapsed);
+      dom.timerDisplay.style.color = '#ffffff';
+      showNewScramble();
+      addSolve(elapsed, currentScramble);
+      renderStats();
+      renderSessionBar();
+      if (dom.hint) dom.hint.style.display = 'none';
+    }
+
+    function updateDisplay() {
+      if (timerState !== 'running') return;
+      elapsed = performance.now() - startTime;
+      dom.timerDisplay.textContent = formatTime(elapsed);
+      animationFrame = requestAnimationFrame(updateDisplay);
+    }
+
+    // === Input Handlers (keyboard + touch) ===
+
+    document.addEventListener('keydown', (e) => {
+      if (e.code !== 'Space') return;
+      e.preventDefault();
+      if (!e.repeat) handleInputDown();
     });
 
-    document.getElementById('export-btn').addEventListener('click', () => {
+    document.addEventListener('keyup', (e) => {
+      if (e.code !== 'Space') return;
+      e.preventDefault();
+      handleInputUp();
+    });
+
+    dom.timerDisplay.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      handleInputDown();
+    });
+
+    dom.timerDisplay.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      handleInputUp();
+    });
+
+    // === CSV Import / Export ===
+
+    function parseCSVLine(line) {
+      const fields = [];
+      let current = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQuotes) {
+          if (ch === '"' && line[i + 1] === '"') {
+            current += '"';
+            i++;
+          } else if (ch === '"') {
+            inQuotes = false;
+          } else {
+            current += ch;
+          }
+        } else if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === ',') {
+          fields.push(current);
+          current = '';
+        } else {
+          current += ch;
+        }
+      }
+      fields.push(current);
+      return fields;
+    }
+
+    function exportSolves() {
       const solves = getSessionSolves();
       if (solves.length === 0) {
         alert('No solves to export.');
@@ -868,20 +899,12 @@
       a.download = `rubix-timer-${session}-${date}.csv`;
       a.click();
       URL.revokeObjectURL(url);
-    });
+    }
 
-    document.getElementById('import-btn').addEventListener('click', () => {
-      document.getElementById('import-file').click();
-    });
-
-    document.getElementById('import-file').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
+    function importSolves(file) {
       const reader = new FileReader();
       reader.onload = (event) => {
-        const text = event.target.result;
-        const lines = text.trim().split('\n');
+        const lines = event.target.result.trim().split('\n');
 
         if (lines.length < 2) {
           alert('CSV file is empty or has no data rows.');
@@ -896,9 +919,8 @@
 
         const existing = loadSolves();
         const existingKeys = new Set(existing.map(s => `${s.time}_${s.date}`));
-
-        let imported = 0;
         const meta = loadSessionMeta();
+        let imported = 0;
 
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
@@ -908,22 +930,16 @@
           if (fields.length < 2) continue;
 
           const time = parseInt(fields[0], 10);
+          if (isNaN(time) || time <= 0) continue;
+
           const scramble = fields[1];
           const date = fields[2] || new Date().toISOString();
           const session = fields[3] || getActiveSession();
-
-          if (isNaN(time) || time <= 0) continue;
-
           const key = `${time}_${date}`;
+
           if (existingKeys.has(key)) continue;
 
-          existing.unshift({
-            id: crypto.randomUUID(),
-            time: time,
-            scramble: scramble,
-            date: date,
-            session: session
-          });
+          existing.unshift({ id: crypto.randomUUID(), time, scramble, date, session });
 
           if (!meta.sessions.includes(session)) {
             meta.sessions.push(session);
@@ -941,74 +957,61 @@
       };
 
       reader.readAsText(file);
-      e.target.value = '';
-    });
-
-    function parseCSVLine(line) {
-      const fields = [];
-      let current = '';
-      let inQuotes = false;
-
-      for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-        if (inQuotes) {
-          if (ch === '"' && line[i + 1] === '"') {
-            current += '"';
-            i++;
-          } else if (ch === '"') {
-            inQuotes = false;
-          } else {
-            current += ch;
-          }
-        } else {
-          if (ch === '"') {
-            inQuotes = true;
-          } else if (ch === ',') {
-            fields.push(current);
-            current = '';
-          } else {
-            current += ch;
-          }
-        }
-      }
-      fields.push(current);
-      return fields;
     }
 
-    document.getElementById('clear-all-btn').addEventListener('click', () => {
-      if (confirm('Delete all solves in this session?')) {
-        const session = getActiveSession();
-        const solves = loadSolves().filter(s => s.session !== session);
-        saveSolves(solves);
-        renderStats();
-      }
-    });
+    // === Session Bar Rendering ===
 
     function renderSessionBar() {
       const meta = loadSessionMeta();
-      const select = document.getElementById('session-select');
-      select.innerHTML = '';
+      dom.sessionSelect.innerHTML = '';
       meta.sessions.forEach(name => {
         const opt = document.createElement('option');
         opt.value = name;
         opt.textContent = name;
         if (name === meta.activeSession) opt.selected = true;
-        select.appendChild(opt);
+        dom.sessionSelect.appendChild(opt);
       });
 
       const today = new Date().toISOString().slice(0, 10);
       const todayCount = getSessionSolves().filter(s => s.date.slice(0, 10) === today).length;
-      document.getElementById('session-today').textContent = todayCount > 0 ? `Today: ${todayCount}` : '';
+      dom.sessionToday.textContent = todayCount > 0 ? `Today: ${todayCount}` : '';
     }
 
-    document.getElementById('session-select').addEventListener('change', (e) => {
+    // === Event Listeners ===
+
+    dom.historyList.addEventListener('click', (e) => {
+      const btn = e.target.closest('.history-delete');
+      if (btn) {
+        deleteSolve(btn.dataset.id);
+        renderStats();
+      }
+    });
+
+    document.getElementById('export-btn').addEventListener('click', exportSolves);
+
+    document.getElementById('import-btn').addEventListener('click', () => {
+      dom.importFile.click();
+    });
+
+    dom.importFile.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) importSolves(file);
+      e.target.value = '';
+    });
+
+    document.getElementById('clear-all-btn').addEventListener('click', () => {
+      if (confirm('Delete all solves in this session?')) {
+        const solves = loadSolves().filter(s => s.session !== getActiveSession());
+        saveSolves(solves);
+        renderStats();
+      }
+    });
+
+    dom.sessionSelect.addEventListener('change', (e) => {
       setActiveSession(e.target.value);
       renderSessionBar();
       renderStats();
-      const hint = document.getElementById('hint');
-      if (hint) {
-        hint.style.display = getSessionSolves().length > 0 ? 'none' : '';
-      }
+      updateHintVisibility();
     });
 
     document.getElementById('session-add').addEventListener('click', () => {
@@ -1017,8 +1020,7 @@
         createSession(name.trim());
         renderSessionBar();
         renderStats();
-        const hint = document.getElementById('hint');
-        if (hint) hint.style.display = '';
+        updateHintVisibility();
       }
     });
 
@@ -1038,25 +1040,21 @@
         deleteSession(current);
         renderSessionBar();
         renderStats();
-        const hint = document.getElementById('hint');
-        if (hint) {
-          hint.style.display = getSessionSolves().length > 0 ? 'none' : '';
-        }
+        updateHintVisibility();
       }
     });
-
-    migrateData();
-    renderStats();
-    renderSessionBar();
-
-    if (getSessionSolves().length > 0) {
-      const hint = document.getElementById('hint');
-      if (hint) hint.style.display = 'none';
-    }
 
     document.addEventListener('mouseup', (e) => {
       if (e.target.tagName === 'BUTTON') e.target.blur();
     });
+
+    // === Initialization ===
+
+    migrateData();
+    showNewScramble();
+    renderStats();
+    renderSessionBar();
+    updateHintVisibility();
   </script>
 </body>
 </html>
