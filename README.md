@@ -12,3 +12,4 @@
 
 ### Code
 - [ ] Refactoring (break up single-file app into modules)
+- [ ] Visual animation that does the scramble
