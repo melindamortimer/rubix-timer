@@ -22,6 +22,28 @@
       height: 100%;
       display: flex;
       flex-direction: column;
+      position: relative;
+    }
+
+    #app-header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 0 6px;
+    }
+
+    #logo {
+      width: 32px;
+      height: 32px;
+    }
+
+    #app-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      color: #888;
+      text-transform: uppercase;
     }
 
     #scramble-bar {
@@ -268,6 +290,10 @@
 </head>
 <body>
   <div class="container">
+    <div id="app-header">
+      <img id="logo" src="rubix_logo.png" alt="Rubik's Cube">
+      <span id="app-title">Rubik's Timer</span>
+    </div>
     <div id="scramble-bar">
       <div id="scramble-text"></div>
       <button onclick="showNewScramble()" title="New scramble">&#x21BB;</button>
