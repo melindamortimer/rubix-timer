@@ -1,4 +1,15 @@
-add:
-- graph of speed over time
-- move vs best to just below timer
-- vs best should be the previous time vs previous best not current best (otherwise best will show 0 and not negatives)
+## Todo
+
+### Stats
+- [ ] Ao5 PB and Ao12 PB stats
+- [ ] Session vs all-time stats toggle
+- [ ] Best/worst single highlighting (green/red)
+
+### Timer Features
+- [ ] WCA inspection timer (15s countdown)
+- [ ] Manual time entry
+- [ ] DNF marking
+- [ ] +2 penalty support
+
+### Code
+- [ ] Refactoring (break up single-file app into modules)
