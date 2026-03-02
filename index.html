@@ -28,12 +28,25 @@
       padding: 12px 16px;
       text-align: center;
       font-family: monospace;
-      font-size: 1.1rem;
+      font-size: 1.4rem;
       min-height: 60px;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 8px;
+    }
+
+    #scramble-text {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .scramble-move {
+      display: inline-block;
+      width: 2.2ch;
+      text-align: center;
     }
 
     #scramble-bar button {
@@ -91,8 +104,15 @@
       font-size: 0.8rem;
     }
 
-    #timer-display {
+    #timer-area {
       flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #timer-display {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -108,6 +128,7 @@
       font-family: monospace;
       font-size: 1.1rem;
       min-height: 1.4em;
+      margin-top: -4px;
     }
 
     #hint {
@@ -117,10 +138,16 @@
       margin-top: 8px;
     }
 
+    #speed-chart-container {
+      padding: 8px 12px;
+      height: 140px;
+      position: relative;
+    }
+
     #stats-panel {
       display: flex;
       flex-direction: column;
-      max-height: 45vh;
+      max-height: 55vh;
       overflow: hidden;
     }
 
@@ -189,7 +216,7 @@
 
     .history-num { width: 40px; color: #666; }
     .history-time { width: 80px; font-family: monospace; font-weight: bold; }
-    .history-scramble { flex: 1; font-family: monospace; font-size: 0.75rem; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .history-scramble { flex: 1; font-family: monospace; font-size: 0.75rem; color: #666; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: 12px; }
 
     .history-delta {
       width: 70px;
@@ -237,6 +264,7 @@
 
     .history-delete:hover { color: #ff5252; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -255,11 +283,16 @@
       <span id="session-today"></span>
     </div>
 
-    <div id="timer-display">0.00</div>
-    <div id="vs-best"></div>
+    <div id="timer-area">
+      <div id="timer-display">0.00</div>
+      <div id="vs-best"></div>
+    </div>
     <div id="hint">Hold spacebar to start</div>
 
     <div id="stats-panel">
+      <div id="speed-chart-container">
+        <canvas id="speed-chart"></canvas>
+      </div>
       <div id="stats-row">
         <div class="stat"><span class="stat-label">Best</span><span id="stat-best" class="stat-value">&mdash;</span></div>
         <div class="stat"><span class="stat-label">Ao3</span><span id="stat-ao3" class="stat-value">&mdash;</span></div>
@@ -306,7 +339,8 @@
     const scrambleText = document.getElementById('scramble-text');
 
     function showNewScramble() {
-      scrambleText.textContent = generateScramble();
+      const moves = generateScramble().split(' ');
+      scrambleText.innerHTML = moves.map(m => `<span class="scramble-move">${m}</span>`).join('');
     }
 
     showNewScramble();
@@ -385,7 +419,7 @@
     function startTimer() {
       timerState = 'running';
       timerDisplay.style.color = '#ffffff';
-      currentScramble = scrambleText.textContent;
+      currentScramble = [...scrambleText.querySelectorAll('.scramble-move')].map(el => el.textContent).join(' ');
       startTime = performance.now();
       updateDisplay();
     }
@@ -585,14 +619,16 @@
       document.getElementById('stat-ao5').textContent = ao5 !== null ? formatTime(ao5) : '—';
       document.getElementById('stat-ao12').textContent = ao12 !== null ? formatTime(ao12) : '—';
 
-      // vs Best under timer
+      // vs Best under timer (compare against previous best, i.e. best before current solve)
       const vsBestEl = document.getElementById('vs-best');
-      if (solves.length > 0 && best !== null) {
+      if (solves.length > 1) {
         const lastSolve = solves[0];
-        const delta = formatDelta(lastSolve.time, best);
+        const previousBest = calcBest(solves.slice(1));
+        const delta = formatDelta(lastSolve.time, previousBest);
         if (delta) {
           vsBestEl.textContent = 'vs best: ' + delta.text;
-          if (delta.diff === 0) { vsBestEl.style.color = '#ffd700'; }
+          if (delta.diff < 0) { vsBestEl.style.color = '#00e676'; }
+          else if (delta.diff === 0) { vsBestEl.style.color = '#ffd700'; }
           else if (delta.diff <= 500) { vsBestEl.style.color = '#00e676'; }
           else if (delta.diff >= 3000) { vsBestEl.style.color = '#ff5252'; }
           else { vsBestEl.style.color = '#888'; }
@@ -602,6 +638,8 @@
       } else {
         vsBestEl.textContent = '';
       }
+
+      renderSpeedChart(solves);
 
       const historyList = document.getElementById('history-list');
       historyList.innerHTML = '';
@@ -615,7 +653,7 @@
           { text: 'Time', width: '80px' },
           { text: 'vs Ao3', width: '70px', align: 'right' },
           { text: 'vs Ao5', width: '70px', align: 'right' },
-          { text: 'Scramble', flex: true },
+          { text: 'Scramble', flex: true, marginLeft: '12px' },
           { text: '', width: '32px' }
         ];
 
@@ -625,6 +663,7 @@
           if (col.width) span.style.width = col.width;
           if (col.flex) span.style.flex = '1';
           if (col.align) span.style.textAlign = col.align;
+          if (col.marginLeft) span.style.marginLeft = col.marginLeft;
           header.appendChild(span);
         });
 
@@ -689,6 +728,87 @@
 
         row.append(num, time, deltaAo3, deltaAo5, scramble, del);
         historyList.appendChild(row);
+      });
+    }
+
+    // === Speed Chart ===
+
+    let speedChart = null;
+
+    function renderSpeedChart(solves) {
+      const ctx = document.getElementById('speed-chart');
+      const container = document.getElementById('speed-chart-container');
+
+      if (solves.length < 2) {
+        container.style.display = 'none';
+        if (speedChart) { speedChart.destroy(); speedChart = null; }
+        return;
+      }
+
+      container.style.display = '';
+
+      // Reverse so oldest is first (left to right)
+      const ordered = [...solves].reverse();
+      const labels = ordered.map((_, i) => i + 1);
+      const data = ordered.map(s => s.time / 1000);
+
+      if (speedChart) {
+        speedChart.data.labels = labels;
+        speedChart.data.datasets[0].data = data;
+        speedChart.update('none');
+        return;
+      }
+
+      speedChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            data,
+            borderColor: '#7c4dff',
+            backgroundColor: 'rgba(124, 77, 255, 0.1)',
+            borderWidth: 1.5,
+            pointRadius: solves.length > 50 ? 0 : 2,
+            pointHoverRadius: 4,
+            pointBackgroundColor: '#7c4dff',
+            fill: true,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => formatTime(ctx.parsed.y * 1000)
+              }
+            }
+          },
+          scales: {
+            x: {
+              display: true,
+              title: { display: false },
+              ticks: { color: '#555', font: { size: 10 }, maxTicksLimit: 10 },
+              grid: { color: '#222' }
+            },
+            y: {
+              display: true,
+              title: { display: false },
+              ticks: {
+                color: '#555',
+                font: { size: 10 },
+                callback: (v) => formatTime(v * 1000)
+              },
+              grid: { color: '#222' }
+            }
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          }
+        }
       });
     }
 
