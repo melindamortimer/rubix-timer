@@ -32,6 +32,8 @@ const dom = {
   chartContainer: document.getElementById('speed-chart-container'),
   importFile: document.getElementById('import-file'),
   cubeScene: document.getElementById('cube-scene'),
+  splitDisplayYou: document.getElementById('split-display-you'),
+  splitStatusYou: document.getElementById('split-status-you'),
 };
 
 initCubeRenderer(dom.cubeScene);
@@ -132,9 +134,9 @@ const timerControl = initTimer(dom.timerDisplay, {
   onStop(elapsed, scramble) {
     if (isMultiplayer()) {
       saveFinishTime(elapsed);
-      document.getElementById('split-display-you').textContent = formatTime(elapsed);
-      document.getElementById('split-status-you').textContent = 'Done!';
-      document.getElementById('split-display-you').style.color = '#00e676';
+      dom.splitDisplayYou.textContent = formatTime(elapsed);
+      dom.splitStatusYou.textContent = 'Done!';
+      dom.splitDisplayYou.style.color = '#00e676';
       markMyFinished();
       recordMySolve(elapsed);
     } else {
@@ -157,7 +159,7 @@ const timerControl = initTimer(dom.timerDisplay, {
     lastBroadcast = now;
     broadcastTimerUpdate(state, elapsed);
     if (state === 'running' || state === 'holding') {
-      document.getElementById('split-display-you').textContent = formatTime(elapsed);
+      dom.splitDisplayYou.textContent = formatTime(elapsed);
     }
   }
 });
