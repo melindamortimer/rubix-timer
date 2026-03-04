@@ -29,6 +29,9 @@ let oppAnimFrame = null;
 // In-memory stats
 let mySolveTimes = [];
 let oppSolveTimes = [];
+let roundResults = []; // { myTime, oppTime } per round
+let myName = '';
+let oppName = '';
 
 const dom = {
   modal: document.getElementById('mp-modal'),
@@ -54,6 +57,10 @@ const dom = {
   splitStatusOpp: document.getElementById('split-status-opp'),
   splitStatsYou: document.getElementById('split-stats-you'),
   splitStatsOpp: document.getElementById('split-stats-opp'),
+  // Multiplayer history
+  mpHistoryPanel: document.getElementById('mp-history-panel'),
+  mpHistoryHeader: document.getElementById('mp-history-header'),
+  mpHistoryList: document.getElementById('mp-history-list'),
   // Countdown
   countdownOverlay: document.getElementById('countdown-overlay'),
   countdownText: document.getElementById('countdown-text'),
@@ -376,10 +383,42 @@ function renderStatsInto(container, times) {
   `;
 }
 
+// --- History ---
+
+function renderMpHistory() {
+  if (roundResults.length === 0) {
+    dom.mpHistoryPanel.style.display = 'none';
+    return;
+  }
+  dom.mpHistoryPanel.style.display = '';
+  dom.mpHistoryHeader.innerHTML = `
+    <span class="mp-history-num">#</span>
+    <span class="mp-history-header-name">${myName}</span>
+    <span class="mp-history-vs">vs</span>
+    <span class="mp-history-header-name">${oppName}</span>
+  `;
+  dom.mpHistoryList.innerHTML = roundResults
+    .slice()
+    .reverse()
+    .map((r, i) => {
+      const num = roundResults.length - i;
+      const myWon = r.myTime <= r.oppTime;
+      return `<div class="mp-history-row">
+        <span class="mp-history-num">${num}</span>
+        <span class="mp-history-time ${myWon ? 'winner' : 'loser'}">${formatTime(r.myTime)}</span>
+        <span class="mp-history-vs">vs</span>
+        <span class="mp-history-time ${myWon ? 'loser' : 'winner'}">${formatTime(r.oppTime)}</span>
+      </div>`;
+    })
+    .join('');
+}
+
 // --- Multiplayer mode lifecycle ---
 
-function enterMultiplayerMode(myName, opponentName, scramble) {
+function enterMultiplayerMode(enteredMyName, opponentNameVal, scramble) {
   isMultiplayerActive = true;
+  myName = enteredMyName;
+  oppName = opponentNameVal;
   if (timerControl) timerControl.setMultiplayerMode(true);
 
   dom.multiplayerBtn.textContent = 'Leave';
@@ -393,7 +432,7 @@ function enterMultiplayerMode(myName, opponentName, scramble) {
   if (dom.hint) dom.hint.style.display = 'none';
 
   dom.splitNameYou.textContent = myName;
-  dom.splitNameOpp.textContent = opponentName;
+  dom.splitNameOpp.textContent = oppName;
   dom.splitNameOpp.style.color = '';
 
   const moves = scramble.split(' ');
@@ -409,6 +448,7 @@ function handleLeave() {
   oppReady = false;
   mySolveTimes = [];
   oppSolveTimes = [];
+  roundResults = [];
   clearCountdown();
   stopOppLocalTimer();
   if (timerControl) {
@@ -422,6 +462,8 @@ function handleLeave() {
   dom.newRoundBtn.style.display = 'none';
   dom.splitStatsYou.innerHTML = '';
   dom.splitStatsOpp.innerHTML = '';
+  dom.mpHistoryPanel.style.display = 'none';
+  dom.mpHistoryList.innerHTML = '';
 
   dom.soloTimer.style.display = '';
   dom.splitTimer.style.display = 'none';
@@ -471,6 +513,10 @@ function resetRoundState() {
 
 function checkBothFinished() {
   if (myFinished && oppFinished) {
+    const myTime = mySolveTimes[mySolveTimes.length - 1];
+    const oppTime = oppSolveTimes[oppSolveTimes.length - 1];
+    roundResults.push({ myTime, oppTime });
+    renderMpHistory();
     const { playerNumber } = getRoomInfo();
     if (playerNumber === 1) {
       dom.newRoundBtn.style.display = '';
