@@ -45,12 +45,14 @@
           <div class="split-name" id="split-name-you">You</div>
           <div class="split-display" id="split-display-you">0.00</div>
           <div class="split-status" id="split-status-you"></div>
+          <div class="split-stats" id="split-stats-you"></div>
         </div>
         <div class="split-divider"></div>
         <div class="split-player split-player--opp">
           <div class="split-name" id="split-name-opp">Opponent</div>
           <div class="split-display" id="split-display-opp">0.00</div>
           <div class="split-status" id="split-status-opp"></div>
+          <div class="split-stats" id="split-stats-opp"></div>
         </div>
       </div>
       <button class="btn-primary" id="new-round-btn" style="display:none;margin-top:16px;width:auto;padding:10px 32px;">New Round</button>
@@ -107,6 +109,11 @@
         <button class="btn-ghost" id="mp-copy-link">Copy Link</button>
       </div>
     </div>
+  </div>
+
+  <!-- Countdown Overlay -->
+  <div id="countdown-overlay" style="display:none;">
+    <div id="countdown-text"></div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>

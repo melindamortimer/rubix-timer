@@ -488,6 +488,52 @@ body {
   min-height: 1.2em;
 }
 
+/* Countdown Overlay */
+#countdown-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+#countdown-text {
+  font-family: monospace;
+  font-size: clamp(5rem, 20vw, 12rem);
+  font-weight: 700;
+  color: #ffd700;
+  text-shadow: 0 0 40px rgba(255, 215, 0, 0.4);
+}
+
+/* Split Stats */
+.split-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  min-height: 1.4em;
+}
+
+.split-stat {
+  text-align: center;
+}
+
+.split-stat-label {
+  display: block;
+  font-size: 0.65rem;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.split-stat-value {
+  display: block;
+  font-size: 0.85rem;
+  font-family: monospace;
+  color: #bbb;
+  margin-top: 2px;
+}
+
 @media (max-width: 500px) {
   #split-timer {
     flex-direction: column;

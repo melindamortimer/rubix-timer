@@ -90,6 +90,12 @@ async function joinChannel(code) {
     .on('broadcast', { event: 'player_left' }, () => {
       if (callbacks.onOpponentLeft) callbacks.onOpponentLeft();
     })
+    .on('broadcast', { event: 'countdown_start' }, () => {
+      if (callbacks.onCountdownStart) callbacks.onCountdownStart();
+    })
+    .on('broadcast', { event: 'countdown_tick' }, ({ payload }) => {
+      if (callbacks.onCountdownTick) callbacks.onCountdownTick(payload);
+    })
     .subscribe();
 }
 
@@ -119,6 +125,24 @@ export async function broadcastNewScramble() {
   });
 
   return scramble;
+}
+
+export function broadcastCountdownStart() {
+  if (!currentChannel) return;
+  currentChannel.send({
+    type: 'broadcast',
+    event: 'countdown_start',
+    payload: {},
+  });
+}
+
+export function broadcastCountdownTick(value) {
+  if (!currentChannel) return;
+  currentChannel.send({
+    type: 'broadcast',
+    event: 'countdown_tick',
+    payload: { value },
+  });
 }
 
 export async function saveFinishTime(timeMs) {

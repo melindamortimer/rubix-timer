@@ -12,7 +12,7 @@ import { calcBest, calcAvg, getVsBestColor } from './stats.js';
 import { renderSpeedChart } from './chart.js';
 import { renderHistoryList, exportSolves, importSolves } from './history.js';
 import { initTimer } from './timer.js';
-import { initMultiplayerUI, isMultiplayer, broadcastTimerUpdate, broadcastNewScramble, saveFinishTime, markMyFinished } from './multiplayer-ui.js';
+import { initMultiplayerUI, isMultiplayer, broadcastTimerUpdate, broadcastNewScramble, saveFinishTime, markMyFinished, setTimerControl, handleMyStateChange, recordMySolve } from './multiplayer-ui.js';
 
 // === DOM References ===
 
@@ -127,7 +127,7 @@ function refreshAll() {
 let lastBroadcast = 0;
 const BROADCAST_INTERVAL = 100; // ms — throttle to ~10 updates/sec
 
-initTimer(dom.timerDisplay, {
+const timerControl = initTimer(dom.timerDisplay, {
   getScrambleText: getCurrentScrambleText,
   onStop(elapsed, scramble) {
     if (isMultiplayer()) {
@@ -136,6 +136,7 @@ initTimer(dom.timerDisplay, {
       document.getElementById('split-status-you').textContent = 'Done!';
       document.getElementById('split-display-you').style.color = '#00e676';
       markMyFinished();
+      recordMySolve(elapsed);
     } else {
       showNewScramble();
       addSolve(elapsed, scramble);
@@ -146,15 +147,21 @@ initTimer(dom.timerDisplay, {
   },
   onStateChange(state, elapsed) {
     if (!isMultiplayer()) return;
+    if (state === 'ready' || state === 'mp-released') {
+      handleMyStateChange(state);
+      broadcastTimerUpdate(state, elapsed);
+      return;
+    }
     const now = performance.now();
     if (state === 'running' && now - lastBroadcast < BROADCAST_INTERVAL) return;
     lastBroadcast = now;
     broadcastTimerUpdate(state, elapsed);
-    if (state === 'running' || state === 'holding' || state === 'ready') {
+    if (state === 'running' || state === 'holding') {
       document.getElementById('split-display-you').textContent = formatTime(elapsed);
     }
   }
 });
+setTimerControl(timerControl);
 
 // === Event Listeners ===
 

@@ -6,6 +6,7 @@ let startTime = 0;
 let elapsed = 0;
 let animationFrame = null;
 let currentScramble = '';
+let multiplayerMode = false;
 
 export function initTimer(timerDisplay, { getScrambleText, onStop, onStateChange }) {
   function handleInputDown() {
@@ -20,7 +21,14 @@ export function initTimer(timerDisplay, { getScrambleText, onStop, onStateChange
     if (timerState === 'holding') {
       cancelHolding();
     } else if (timerState === 'ready') {
-      startTimerRun();
+      if (multiplayerMode) {
+        // Released during ready/countdown — go back to idle
+        timerState = 'idle';
+        timerDisplay.style.color = '#ffffff';
+        if (onStateChange) onStateChange('mp-released', 0);
+      } else {
+        startTimerRun();
+      }
     }
   }
 
@@ -93,4 +101,20 @@ export function initTimer(timerDisplay, { getScrambleText, onStop, onStateChange
     e.preventDefault();
     handleInputUp();
   });
+
+  return {
+    forceStart() {
+      startTimerRun();
+    },
+    setMultiplayerMode(enabled) {
+      multiplayerMode = enabled;
+    },
+    resetToIdle() {
+      clearTimeout(holdTimeout);
+      cancelAnimationFrame(animationFrame);
+      timerState = 'idle';
+      timerDisplay.textContent = '0.00';
+      timerDisplay.style.color = '#ffffff';
+    },
+  };
 }
