@@ -1,5 +1,7 @@
 import { formatOrDash, formatDelta } from './utils.js';
 import { generateScramble } from './scramble.js';
+import { applyScramble } from './cube-state.js';
+import { initCubeRenderer, updateCubeColors } from './cube-renderer.js';
 import {
   addSolve, deleteSolve, loadSolves, saveSolves,
   loadSessionMeta, getActiveSession, setActiveSession,
@@ -28,7 +30,10 @@ const dom = {
   chartCanvas: document.getElementById('speed-chart'),
   chartContainer: document.getElementById('speed-chart-container'),
   importFile: document.getElementById('import-file'),
+  cubeScene: document.getElementById('cube-scene'),
 };
+
+initCubeRenderer(dom.cubeScene);
 
 // === Scramble Display ===
 
@@ -37,6 +42,7 @@ function showNewScramble() {
   dom.scrambleText.innerHTML = moves
     .map(m => `<span class="scramble-move">${m}</span>`)
     .join('');
+  updateCubeColors(applyScramble(moves));
 }
 
 function getCurrentScrambleText() {
