@@ -150,10 +150,12 @@ export function initMultiplayerUI(showNewScrambleFn) {
 
   // Realtime event handlers
   onEvent('onOpponentJoined', (payload) => {
-    const { room } = getRoomInfo();
+    const { room, playerNumber } = getRoomInfo();
+    // Only P1 handles this — P2 enters via the join button handler
+    if (playerNumber !== 1) return;
     dom.modal.style.display = 'none';
-    const myName = dom.nameInput.value.trim();
-    enterMultiplayerMode(myName, payload.name, room.scramble);
+    const enteredName = dom.nameInput.value.trim();
+    enterMultiplayerMode(enteredName, payload.name, room.scramble);
   });
 
   onEvent('onOpponentTimerUpdate', (payload) => {
