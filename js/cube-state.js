@@ -27,12 +27,12 @@ function rotateFaceCW(faceArr) {
 // Each move definition: which face rotates, and 4 edge strips that cycle clockwise.
 // Each strip is [face, i0, i1, i2] — the 3 stickers from that face involved in the cycle.
 const MOVE_DEFS = {
-  R: { face: 'R', edges: [['U',2,5,8], ['F',2,5,8], ['D',2,5,8], ['B',6,3,0]] },
-  L: { face: 'L', edges: [['U',0,3,6], ['B',8,5,2], ['D',0,3,6], ['F',0,3,6]] },
-  U: { face: 'U', edges: [['B',2,1,0], ['R',2,1,0], ['F',2,1,0], ['L',2,1,0]] },
+  R: { face: 'R', edges: [['F',2,5,8], ['U',2,5,8], ['B',6,3,0], ['D',2,5,8]] },
+  L: { face: 'L', edges: [['B',8,5,2], ['U',0,3,6], ['F',0,3,6], ['D',0,3,6]] },
+  U: { face: 'U', edges: [['B',0,1,2], ['R',0,1,2], ['F',0,1,2], ['L',0,1,2]] },
   D: { face: 'D', edges: [['F',6,7,8], ['R',6,7,8], ['B',6,7,8], ['L',6,7,8]] },
-  F: { face: 'F', edges: [['U',6,7,8], ['R',0,3,6], ['D',2,1,0], ['L',8,5,2]] },
-  B: { face: 'B', edges: [['U',2,1,0], ['L',0,3,6], ['D',6,7,8], ['R',8,5,2]] },
+  F: { face: 'F', edges: [['L',2,5,8], ['U',8,7,6], ['R',6,3,0], ['D',0,1,2]] },
+  B: { face: 'B', edges: [['R',2,5,8], ['U',0,1,2], ['L',6,3,0], ['D',8,7,6]] },
 };
 
 function applyMoveCW(state, moveName) {
