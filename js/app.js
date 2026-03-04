@@ -137,8 +137,8 @@ const timerControl = initTimer(dom.timerDisplay, {
       dom.splitDisplayYou.textContent = formatTime(elapsed);
       dom.splitStatusYou.textContent = 'Done!';
       dom.splitDisplayYou.style.color = '#00e676';
-      markMyFinished();
       recordMySolve(elapsed);
+      markMyFinished();
     } else {
       showNewScramble();
       addSolve(elapsed, scramble);
