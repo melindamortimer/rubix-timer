@@ -251,12 +251,55 @@ body {
 
 .history-delete:hover { color: #ff5252; }
 
+/* Cube Side Panel */
+.cube-panel {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  transition: transform 0.3s ease;
+}
+
+.cube-panel.collapsed {
+  transform: translateY(-50%) translateX(calc(100% - 32px));
+}
+
+.cube-toggle {
+  background: #1e1e3a;
+  border: 1px solid #444;
+  border-right: none;
+  color: #888;
+  padding: 12px 6px;
+  border-radius: 6px 0 0 6px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.cube-toggle:hover { color: #fff; border-color: #666; }
+
+.cube-panel.collapsed .cube-toggle {
+  border-right: 1px solid #444;
+  border-radius: 6px 0 0 6px;
+}
+
+.cube-panel-inner {
+  background: #1e1e3a;
+  border: 1px solid #444;
+  border-right: none;
+  border-radius: 8px 0 0 8px;
+  padding: 12px;
+}
+
 /* 3D Cube */
 .cube-scene {
-  width: 150px;
-  height: 150px;
+  width: 130px;
+  height: 130px;
   perspective: 600px;
-  margin: 0 auto;
   cursor: grab;
 }
 
@@ -273,8 +316,8 @@ body {
 
 .cube-face {
   position: absolute;
-  width: 150px;
-  height: 150px;
+  width: 130px;
+  height: 130px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(3, 1fr);
@@ -284,12 +327,12 @@ body {
   backface-visibility: hidden;
 }
 
-.cube-face--U { transform: rotateX(90deg) translateZ(75px); }
-.cube-face--D { transform: rotateX(-90deg) translateZ(75px); }
-.cube-face--F { transform: translateZ(75px); }
-.cube-face--B { transform: rotateY(180deg) translateZ(75px); }
-.cube-face--R { transform: rotateY(90deg) translateZ(75px); }
-.cube-face--L { transform: rotateY(-90deg) translateZ(75px); }
+.cube-face--U { transform: rotateX(90deg) translateZ(65px); }
+.cube-face--D { transform: rotateX(-90deg) translateZ(65px); }
+.cube-face--F { transform: translateZ(65px); }
+.cube-face--B { transform: rotateY(180deg) translateZ(65px); }
+.cube-face--R { transform: rotateY(90deg) translateZ(65px); }
+.cube-face--L { transform: rotateY(-90deg) translateZ(65px); }
 
 .sticker {
   border-radius: 4px;

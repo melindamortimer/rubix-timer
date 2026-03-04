@@ -220,6 +220,14 @@ document.addEventListener('mouseup', (e) => {
   if (e.target.tagName === 'BUTTON') e.target.blur();
 });
 
+// Cube panel toggle
+const cubePanel = document.getElementById('cube-panel');
+const cubeToggle = document.getElementById('cube-toggle');
+cubeToggle.addEventListener('click', () => {
+  cubePanel.classList.toggle('collapsed');
+  cubeToggle.innerHTML = cubePanel.classList.contains('collapsed') ? '&#x25B6;' : '&#x25C0;';
+});
+
 // Expose for the inline onclick in HTML
 window.showNewScramble = async () => {
   if (isMultiplayer()) {
