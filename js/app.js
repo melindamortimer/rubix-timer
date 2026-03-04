@@ -1,4 +1,4 @@
-import { formatOrDash, formatDelta } from './utils.js';
+import { formatOrDash, formatDelta, formatTime } from './utils.js';
 import { generateScramble } from './scramble.js';
 import { applyScramble } from './cube-state.js';
 import { initCubeRenderer, updateCubeColors } from './cube-renderer.js';
@@ -12,6 +12,7 @@ import { calcBest, calcAvg, getVsBestColor } from './stats.js';
 import { renderSpeedChart } from './chart.js';
 import { renderHistoryList, exportSolves, importSolves } from './history.js';
 import { initTimer } from './timer.js';
+import { initMultiplayerUI, isMultiplayer, broadcastTimerUpdate, broadcastNewScramble, saveFinishTime, markMyFinished } from './multiplayer-ui.js';
 
 // === DOM References ===
 
@@ -37,8 +38,8 @@ initCubeRenderer(dom.cubeScene);
 
 // === Scramble Display ===
 
-function showNewScramble() {
-  const moves = generateScramble();
+function showNewScramble(presetMoves) {
+  const moves = presetMoves || generateScramble();
   dom.scrambleText.innerHTML = moves
     .map(m => `<span class="scramble-move">${m}</span>`)
     .join('');
@@ -123,14 +124,35 @@ function refreshAll() {
 
 // === Timer Integration ===
 
+let lastBroadcast = 0;
+const BROADCAST_INTERVAL = 100; // ms — throttle to ~10 updates/sec
+
 initTimer(dom.timerDisplay, {
   getScrambleText: getCurrentScrambleText,
   onStop(elapsed, scramble) {
-    showNewScramble();
-    addSolve(elapsed, scramble);
-    renderStats();
-    renderSessionBar();
-    if (dom.hint) dom.hint.style.display = 'none';
+    if (isMultiplayer()) {
+      saveFinishTime(elapsed);
+      document.getElementById('split-display-you').textContent = formatTime(elapsed);
+      document.getElementById('split-status-you').textContent = 'Done!';
+      document.getElementById('split-display-you').style.color = '#00e676';
+      markMyFinished();
+    } else {
+      showNewScramble();
+      addSolve(elapsed, scramble);
+      renderStats();
+      renderSessionBar();
+      if (dom.hint) dom.hint.style.display = 'none';
+    }
+  },
+  onStateChange(state, elapsed) {
+    if (!isMultiplayer()) return;
+    const now = performance.now();
+    if (state === 'running' && now - lastBroadcast < BROADCAST_INTERVAL) return;
+    lastBroadcast = now;
+    broadcastTimerUpdate(state, elapsed);
+    if (state === 'running' || state === 'holding' || state === 'ready') {
+      document.getElementById('split-display-you').textContent = formatTime(elapsed);
+    }
   }
 });
 
@@ -199,7 +221,14 @@ document.addEventListener('mouseup', (e) => {
 });
 
 // Expose for the inline onclick in HTML
-window.showNewScramble = showNewScramble;
+window.showNewScramble = async () => {
+  if (isMultiplayer()) {
+    const scramble = await broadcastNewScramble();
+    if (scramble) showNewScramble(scramble.split(' '));
+  } else {
+    showNewScramble();
+  }
+};
 
 // === Initialization ===
 
@@ -208,3 +237,4 @@ showNewScramble();
 renderStats();
 renderSessionBar();
 updateHintVisibility();
+initMultiplayerUI(showNewScramble);

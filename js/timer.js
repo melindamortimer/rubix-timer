@@ -7,7 +7,7 @@ let elapsed = 0;
 let animationFrame = null;
 let currentScramble = '';
 
-export function initTimer(timerDisplay, { getScrambleText, onStop }) {
+export function initTimer(timerDisplay, { getScrambleText, onStop, onStateChange }) {
   function handleInputDown() {
     if (timerState === 'running') {
       stopTimer();
@@ -28,9 +28,11 @@ export function initTimer(timerDisplay, { getScrambleText, onStop }) {
     timerDisplay.textContent = '0.00';
     timerState = 'holding';
     timerDisplay.style.color = '#ffd700';
+    if (onStateChange) onStateChange('holding', 0);
     holdTimeout = setTimeout(() => {
       timerState = 'ready';
       timerDisplay.style.color = '#00e676';
+      if (onStateChange) onStateChange('ready', 0);
     }, 300);
   }
 
@@ -38,6 +40,7 @@ export function initTimer(timerDisplay, { getScrambleText, onStop }) {
     clearTimeout(holdTimeout);
     timerState = 'idle';
     timerDisplay.style.color = '#ffffff';
+    if (onStateChange) onStateChange('idle', 0);
   }
 
   function startTimerRun() {
@@ -45,6 +48,7 @@ export function initTimer(timerDisplay, { getScrambleText, onStop }) {
     timerDisplay.style.color = '#ffffff';
     currentScramble = getScrambleText();
     startTime = performance.now();
+    if (onStateChange) onStateChange('running', 0);
     updateDisplay();
   }
 
@@ -54,6 +58,7 @@ export function initTimer(timerDisplay, { getScrambleText, onStop }) {
     cancelAnimationFrame(animationFrame);
     timerDisplay.textContent = formatTime(elapsed);
     timerDisplay.style.color = '#ffffff';
+    if (onStateChange) onStateChange('stopped', elapsed);
     onStop(elapsed, currentScramble);
   }
 
@@ -61,6 +66,7 @@ export function initTimer(timerDisplay, { getScrambleText, onStop }) {
     if (timerState !== 'running') return;
     elapsed = performance.now() - startTime;
     timerDisplay.textContent = formatTime(elapsed);
+    if (onStateChange) onStateChange('running', elapsed);
     animationFrame = requestAnimationFrame(updateDisplay);
   }
 
