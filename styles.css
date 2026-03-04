@@ -250,3 +250,48 @@ body {
 }
 
 .history-delete:hover { color: #ff5252; }
+
+/* 3D Cube */
+.cube-scene {
+  width: 150px;
+  height: 150px;
+  perspective: 600px;
+  margin: 0 auto;
+  cursor: grab;
+}
+
+.cube-scene:active { cursor: grabbing; }
+
+.cube {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(-25deg) rotateY(-35deg);
+  transition: none;
+}
+
+.cube-face {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 3px;
+  padding: 3px;
+  box-sizing: border-box;
+  backface-visibility: hidden;
+}
+
+.cube-face--U { transform: rotateX(90deg) translateZ(75px); }
+.cube-face--D { transform: rotateX(-90deg) translateZ(75px); }
+.cube-face--F { transform: translateZ(75px); }
+.cube-face--B { transform: rotateY(180deg) translateZ(75px); }
+.cube-face--R { transform: rotateY(90deg) translateZ(75px); }
+.cube-face--L { transform: rotateY(-90deg) translateZ(75px); }
+
+.sticker {
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+}
