@@ -5,11 +5,10 @@ import {
   broadcastTimerUpdate, broadcastNewScramble, saveFinishTime,
   broadcastCountdownStart, broadcastCountdownTick,
 } from './multiplayer.js';
-import { applyScramble } from './cube-state.js';
-import { updateCubeColors } from './cube-renderer.js';
 import { formatTime, formatOrDash } from './utils.js';
 import { calcBest, calcAvg } from './stats.js';
 
+let showScrambleFn = null;
 let isMultiplayerActive = false;
 let myFinished = false;
 let oppFinished = false;
@@ -72,6 +71,8 @@ export function setTimerControl(control) {
 }
 
 export function initMultiplayerUI(showNewScrambleFn) {
+  showScrambleFn = showNewScrambleFn;
+
   // New Round button (P1 only)
   dom.newRoundBtn.addEventListener('click', async () => {
     const scramble = await broadcastNewScramble();
@@ -410,7 +411,7 @@ function enterMultiplayerMode(enteredMyName, opponentNameVal, scramble) {
   dom.splitNameOpp.style.color = '';
 
   const moves = scramble.split(' ');
-  updateCubeColors(applyScramble(moves));
+  showScrambleFn(moves);
 }
 
 function handleLeave() {
